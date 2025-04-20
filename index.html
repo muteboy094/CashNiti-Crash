@@ -1,79 +1,155 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>CashNiti Crash</title>
+  <title>CashNiti Crash v3.2</title>
   <style>
     body {
-      font-family: Arial;
-      background: #0e1a2b;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #0f172a;
       color: white;
       text-align: center;
-      padding-top: 50px;
+      padding-top: 40px;
+      margin: 0;
     }
-    #multiplier {
-      font-size: 50px;
-      margin: 20px 0;
-    }
-    #balance, #status {
+    input, button {
+      font-size: 16px;
+      padding: 10px;
       margin: 10px;
-      font-size: 18px;
+      border: none;
+      border-radius: 6px;
     }
-    button {
-      padding: 10px 20px;
-      font-size: 18px;
-      margin-top: 20px;
-      cursor: pointer;
+    input[type="number"] {
+      width: 120px;
+      text-align: center;
+    }
+    #cashout, #play {
+      font-weight: bold;
     }
     #cashout {
-      background-color: #28a745;
+      background-color: #22c55e;
+      color: black;
+    }
+    #play {
+      background-color: #3b82f6;
       color: white;
-      border: none;
+    }
+    #multiplier {
+      font-size: 48px;
+      margin: 15px 0;
+      color: #38bdf8;
+    }
+    #players {
+      background: #1e293b;
+      margin-top: 30px;
+      padding: 15px;
+      border-radius: 10px;
+      max-width: 360px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .player {
+      font-size: 14px;
+      text-align: left;
+      padding: 3px 0;
+      color: #fbbf24;
     }
   </style>
 </head>
 <body>
-  <h1>CashNiti Crash</h1>
-  <p id="balance">Balance: ₹1000</p>
+  <h2>CashNiti Crash</h2>
+  <p id="balance">Balance: &#8377;1000</p>
+  <input type="number" id="bet" placeholder="Enter Bet (&#8377;)" value="151" />
+  <br>
+  <button id="play">PLAY</button>
   <div id="multiplier">1.00x</div>
-  <button id="cashout">CASHOUT</button>
-  <p id="status">Game running...</p>
+  <button id="cashout" disabled>CASHOUT</button>
+  <p id="status">Waiting to start...</p>
+
+  <div id="players">
+    <h4>Recent Players</h4>
+    <div id="playerLog"></div>
+  </div>
+
+  <audio id="crashSound" src="https://www.myinstants.com/media/sounds/lauda-lag-gaya.mp3" preload="auto"></audio>
+  <audio id="cashSound" src="https://www.myinstants.com/media/sounds/money-rain-meme.mp3" preload="auto"></audio>
+  <audio id="startSound" src="https://www.myinstants.com/media/sounds/startup.mp3" preload="auto"></audio>
 
   <script>
-    let multiplier = 1.00;
-    let interval;
-    let crashed = false;
     let balance = 1000;
-    let playing = true;
+    let multiplier = 1.00;
+    let crashed = false;
+    let interval;
+    let playing = false;
+    let betPlaced = false;
+    let crashPoint;
+    const crashSound = document.getElementById("crashSound");
+    const cashSound = document.getElementById("cashSound");
+    const startSound = document.getElementById("startSound");
+    const playerLog = document.getElementById("playerLog");
 
-    function getRandomCrashPoint() {
-      return (Math.random() * 5 + 1.5).toFixed(2); // random between 1.5x - 6.5x
+    function resetGame() {
+      multiplier = 1.00;
+      crashed = false;
+      betPlaced = false;
+      document.getElementById("multiplier").innerText = "1.00x";
+      document.getElementById("status").innerText = "Game running...";
+      document.getElementById("cashout").disabled = false;
     }
-
-    let crashPoint = getRandomCrashPoint();
 
     function updateMultiplier() {
       if (multiplier >= crashPoint) {
-        document.getElementById("status").innerText = "CRASHED at " + multiplier.toFixed(2) + "x!";
-        clearInterval(interval);
         crashed = true;
         playing = false;
+        clearInterval(interval);
+        document.getElementById("status").innerText = "CRASHED at " + multiplier.toFixed(2) + "x!";
+        crashSound.play();
+        addPlayer("User", "CRASHED", "&#8377;0");
+        document.getElementById("cashout").disabled = true;
       } else {
         multiplier += 0.05;
         document.getElementById("multiplier").innerText = multiplier.toFixed(2) + "x";
       }
     }
 
-    interval = setInterval(updateMultiplier, 100);
+    function addPlayer(name, action, amount) {
+      const entry = document.createElement("div");
+      entry.className = "player";
+      entry.innerHTML = `${name} ${action} — ${amount}`;
+      playerLog.prepend(entry);
+      if (playerLog.children.length > 7) {
+        playerLog.removeChild(playerLog.lastChild);
+      }
+    }
+
+    document.getElementById("play").onclick = function() {
+      if (playing) return;
+      const bet = parseInt(document.getElementById("bet").value);
+      if (!bet || bet <= 0 || bet > balance) {
+        alert("Invalid Bet Amount!");
+        return;
+      }
+      crashPoint = (Math.random() * 4 + 1.5).toFixed(2);
+      balance -= bet;
+      document.getElementById("balance").innerHTML = "Balance: &#8377;" + balance;
+      resetGame();
+      playing = true;
+      startSound.play();
+      interval = setInterval(updateMultiplier, 100);
+      betPlaced = true;
+    };
 
     document.getElementById("cashout").onclick = function() {
-      if (!crashed && playing) {
-        let cashoutAmount = Math.floor(100 * multiplier);
-        balance += cashoutAmount;
-        document.getElementById("balance").innerText = "Balance: ₹" + balance;
-        document.getElementById("status").innerText = "Cashed out at " + multiplier.toFixed(2) + "x | Won ₹" + cashoutAmount;
-        clearInterval(interval);
-        playing = false;
-      }
+      if (!playing || !betPlaced) return;
+      const bet = parseInt(document.getElementById("bet").value);
+      const cashoutAmount = Math.floor(bet * multiplier);
+      balance += cashoutAmount;
+      clearInterval(interval);
+      playing = false;
+      document.getElementById("status").innerText = `Cashed out at ${multiplier.toFixed(2)}x — Won &#8377;${cashoutAmount}`;
+      document.getElementById("balance").innerHTML = "Balance: &#8377;" + balance;
+      cashSound.play();
+      addPlayer("User", `won at ${multiplier.toFixed(2)}x`, `&#8377;${cashoutAmount}`);
+      document.getElementById("cashout").disabled = true;
     };
   </script>
 </body>
