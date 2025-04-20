@@ -1,10 +1,80 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>CashNiti Crash Game</title>
+  <title>CashNiti Crash</title>
+  <style>
+    body {
+      font-family: Arial;
+      background: #0e1a2b;
+      color: white;
+      text-align: center;
+      padding-top: 50px;
+    }
+    #multiplier {
+      font-size: 50px;
+      margin: 20px 0;
+    }
+    #balance, #status {
+      margin: 10px;
+      font-size: 18px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 18px;
+      margin-top: 20px;
+      cursor: pointer;
+    }
+    #cashout {
+      background-color: #28a745;
+      color: white;
+      border: none;
+    }
+  </style>
 </head>
 <body>
-<h1>Welcome to CashNiti Crash</h1>
-<p>Game coming soon...</p>
+  <h1>CashNiti Crash</h1>
+  <p id="balance">Balance: ₹1000</p>
+  <div id="multiplier">1.00x</div>
+  <button id="cashout">CASHOUT</button>
+  <p id="status">Game running...</p>
+
+  <script>
+    let multiplier = 1.00;
+    let interval;
+    let crashed = false;
+    let balance = 1000;
+    let playing = true;
+
+    function getRandomCrashPoint() {
+      return (Math.random() * 5 + 1.5).toFixed(2); // random between 1.5x - 6.5x
+    }
+
+    let crashPoint = getRandomCrashPoint();
+
+    function updateMultiplier() {
+      if (multiplier >= crashPoint) {
+        document.getElementById("status").innerText = "CRASHED at " + multiplier.toFixed(2) + "x!";
+        clearInterval(interval);
+        crashed = true;
+        playing = false;
+      } else {
+        multiplier += 0.05;
+        document.getElementById("multiplier").innerText = multiplier.toFixed(2) + "x";
+      }
+    }
+
+    interval = setInterval(updateMultiplier, 100);
+
+    document.getElementById("cashout").onclick = function() {
+      if (!crashed && playing) {
+        let cashoutAmount = Math.floor(100 * multiplier);
+        balance += cashoutAmount;
+        document.getElementById("balance").innerText = "Balance: ₹" + balance;
+        document.getElementById("status").innerText = "Cashed out at " + multiplier.toFixed(2) + "x | Won ₹" + cashoutAmount;
+        clearInterval(interval);
+        playing = false;
+      }
+    };
+  </script>
 </body>
 </html>
